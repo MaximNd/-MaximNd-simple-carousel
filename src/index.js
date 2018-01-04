@@ -25,7 +25,8 @@ export default class Slider {
         this.autoPlay = getDef(options.autoPlay, config.autoPlay);
         this.delay = getDef(options.delay, config.delay);
         this.interval = null;
-        this.pauseOnHover = getDef(options.pauseOnHover, config.pauseOnHover);
+        if (this.autoPlay)
+            this.pauseOnHover = getDef(options.pauseOnHover, config.pauseOnHover);
         this.reverse = getDef(options.reverse, config.reverse);
         this.activeClass = getDef(options.activeClass, config.activeClass);
 
@@ -65,18 +66,16 @@ export default class Slider {
         let intervalFunc = () => this.reverse ? this.prevSlide() : this.nextSlide();
         if (this.autoPlay) {
             this.interval = setInterval(intervalFunc, this.delay);
-        }
-        if (this.pauseOnHover) {
-            this.slider.addEventListener('mouseover', () => {
-                clearInterval(this.interval);        
-            }, false);
-            this.slider.addEventListener('mouseleave', () => {
-                this.interval = setInterval(intervalFunc, this.delay);
-            }, false);
+            if (this.pauseOnHover) {
+                this.slider.addEventListener('mouseover', () => {
+                    clearInterval(this.interval);        
+                }, false);
+                this.slider.addEventListener('mouseleave', () => {
+                    this.interval = setInterval(intervalFunc, this.delay);
+                }, false);
+            }
         }
     }
-
- 
 
     nextSlide() {
         ++this.currentSlide;
