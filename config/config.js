@@ -4,7 +4,7 @@ const config = {
     next: '#next',
     prev: '#prev',
     indicators: '#indicators',
-    // slidesToShow: 1,
+    slideSpeed: 800,
     autoPlay: true,
     delay: 4000,
     pauseOnHover: true,

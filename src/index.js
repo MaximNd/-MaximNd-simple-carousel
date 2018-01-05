@@ -1,10 +1,7 @@
 'use strict';
 
 import config from './../config/config';
-
-function getDef(val, def) {
-    return val == null ? def : val;
-}
+import { getDef, setStyles } from './helpers/helpers';
 
 export default class Slider {
     constructor(options = config) {
@@ -19,9 +16,11 @@ export default class Slider {
         this.buttonPrev = getDef(document.querySelector(`${sliderSelector} ${options.prev}`), document.querySelector(`${sliderSelector} ${config.prev}`));
         this.indicators = getDef(document.querySelector(`${sliderSelector} ${options.indicators}`), document.querySelector(`${sliderSelector} ${config.indicators}`)).children;
         // Data
-        this.currentSlide = 0;
-        // this.slidesToShow = getDef(options.slidesToShow, config.slidesToShow);
+        this.slideSpeed = getDef(options.slideSpeed, config.slideSpeed);
+        this.isSliding = false;
         this.total = this.slides.length - 1;
+        this.oldSlide = this.total;
+        this.currentSlide = 0;
         this.autoPlay = getDef(options.autoPlay, config.autoPlay);
         this.delay = getDef(options.delay, config.delay);
         this.interval = null;
@@ -34,17 +33,51 @@ export default class Slider {
     }
 
     initialize() {
+        this.initializeSlider();
+        this.initializeSlidesContainer();
+        this.initializeSlides();
         this.initializeAutoPlay();
         this.initializeButtons();
         this.initializeIndicators();
-        this.switchSlide();
+        setStyles(this.slides[this.currentSlide], {
+            display: 'block'
+        });
+    }
+
+    initializeSlider() {
+        setStyles(this.slider, {
+            position: 'relative'
+        });
+    }
+
+    initializeSlidesContainer() {
+        setStyles(this.slidesContainer, {
+            position: 'relative',
+            width: '100%',
+            overflow: 'hidden'
+        });
+    }
+
+    initializeSlides() {
+        Array.prototype.forEach.call(this.slides, (slide) => setStyles(slide, {
+            position: 'relative',
+            display: 'none',
+            alignItems: 'center',
+            width: '100%',
+            transition: `transform ${this.slideSpeed / 1000}s`
+        }));
     }
 
     initializeIndicators() {
+        this.indicators[this.currentSlide].classList.add(this.activeClass);
         Array.prototype.forEach.call(this.indicators, (el, i) => {
             el.addEventListener('click', () => {
+                if (this.isSliding) return;
+                if (this.currentSlide === i) return;
+                this.oldSlide = this.currentSlide;
                 this.currentSlide = i;
-                this.switchSlide();
+                const type = this.currentSlide > this.oldSlide ? 'next' : 'prev';
+                this.switchSlide(this.currentSlide, this.oldSlide, type);
             }, false);
         });
     }
@@ -63,7 +96,7 @@ export default class Slider {
     }
 
     initializeAutoPlay() {
-        let intervalFunc = () => this.reverse ? this.prevSlide() : this.nextSlide();
+        let intervalFunc = this.reverse ? this.prevSlide.bind(this) : this.nextSlide.bind(this);
         if (this.autoPlay) {
             this.interval = setInterval(intervalFunc, this.delay);
             if (this.pauseOnHover) {
@@ -78,33 +111,82 @@ export default class Slider {
     }
 
     nextSlide() {
-        ++this.currentSlide;
+        if (this.isSliding) return;
+        this.oldSlide = this.currentSlide;
+        ++this.currentSlide
         if (this.currentSlide > this.total) {
             this.currentSlide = 0;
         }
-        this.switchSlide();
+        this.switchSlide(this.currentSlide, this.oldSlide, 'next');
     }
 
     prevSlide() {
-        --this.currentSlide;
+        if (this.isSliding) return;
+        this.oldSlide = this.currentSlide;
+        --this.currentSlide
         if (this.currentSlide < 0) {
             this.currentSlide = this.total;
         }
-        this.switchSlide();
+        this.switchSlide(this.currentSlide, this.oldSlide, 'prev');
     }
 
-    switchSlide() {
-        if (this.currentSlide < 0 || this.currentSlide > this.total) throw new Error(`Slider index(${this.currentSlide}) out of range`);
-        Array.prototype.forEach.call(this.slides, (el, i) => {
-            if (i === this.currentSlide) {
-                this.indicators[i].classList.add(this.activeClass);
-                el.style.display = "inline-block";
-            } else {
-                if (this.indicators[i].classList.contains(this.activeClass)) {
-                    this.indicators[i].classList.remove(this.activeClass);
-                }
-                el.style.display = 'none';
-            }
+    switchSlide(newIndex, oldIndex, type) {
+        if (this.isSliding) return;
+        if (newIndex < 0 || newIndex > this.total) throw new Error(`Slider index(${newIndex}) out of range`);
+        this.isSliding = true;
+
+        this.indicators[newIndex].classList.add(this.activeClass);
+        if (this.indicators[oldIndex].classList.contains(this.activeClass)) {
+            this.indicators[oldIndex].classList.remove(this.activeClass);
+        }
+        
+
+        setStyles(this.slides[newIndex], {
+            display: 'block',
+            position: 'absolute',
+            top: '0'
         });
+        setTimeout(() => {
+            setStyles(this.slides[newIndex], {
+                transform: 'translateX(0%)',
+                webkitTransform: 'translateX(0%)'
+            });
+        }, 16);
+        if (type === 'next') {
+            setStyles(this.slides[newIndex], {
+                transform: 'translateX(100%)',
+                webkitTransform: 'translateX(100%)'
+            });
+            setStyles(this.slides[oldIndex], {
+                transform: 'translateX(-100%)',
+                webkitTransform: 'translateX(-100%)'
+            });
+        } else if (type === 'prev') {
+            setStyles(this.slides[newIndex], {
+                transform: 'translateX(-100%)',
+                webkitTransform: 'translateX(-100%)'
+            });
+            setStyles(this.slides[oldIndex], {
+                transform: 'translateX(100%)',
+                webkitTransform: 'translateX(100%)'
+            });
+        }
+        setTimeout(() => {
+            setStyles(this.slides[oldIndex], {
+                display: 'none',
+                transform: '',
+                webkitTransform: ''
+            });
+            
+            setStyles(this.slides[newIndex], {
+                display: 'block',
+                position: '',
+                top: '',
+                transform: '',
+                webkitTransform: ''
+            });
+
+            this.isSliding = false;
+        }, this.slideSpeed);
     }
 }
