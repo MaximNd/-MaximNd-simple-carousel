@@ -1,3 +1,4 @@
+//@ts-check
 'use strict';
 
 import config from './../config/config';
@@ -14,7 +15,8 @@ export default class Slider {
         this.slides = this.slidesContainer.children;
         this.buttonNext = getDef(document.querySelector(`${sliderSelector} ${options.next}`), document.querySelector(`${sliderSelector} ${config.next}`));
         this.buttonPrev = getDef(document.querySelector(`${sliderSelector} ${options.prev}`), document.querySelector(`${sliderSelector} ${config.prev}`));
-        this.indicators = getDef(document.querySelector(`${sliderSelector} ${options.indicators}`), document.querySelector(`${sliderSelector} ${config.indicators}`)).children;
+        const indicatorsContainer = getDef(document.querySelector(`${sliderSelector} ${options.indicators}`), document.querySelector(`${sliderSelector} ${config.indicators}`));
+        this.indicators = indicatorsContainer == null ? null : indicatorsContainer.children;
         // Data
         this.slideSpeed = getDef(options.slideSpeed, config.slideSpeed);
         this.isSliding = false;
@@ -69,6 +71,7 @@ export default class Slider {
     }
 
     initializeIndicators() {
+        if (!this.indicators) return;
         this.indicators[this.currentSlide].classList.add(this.activeClass);
         Array.prototype.forEach.call(this.indicators, (el, i) => {
             el.addEventListener('click', () => {
@@ -83,6 +86,8 @@ export default class Slider {
     }
 
     initializeButtons() {
+        console.log(this.buttonNext);
+        console.log(this.buttonPrev);
         if (this.buttonNext !== null) {
             this.buttonNext.addEventListener('click', () => {
                 this.nextSlide();
@@ -135,11 +140,13 @@ export default class Slider {
         if (newIndex < 0 || newIndex > this.total) throw new Error(`Slider index(${newIndex}) out of range`);
         this.isSliding = true;
 
-        this.indicators[newIndex].classList.add(this.activeClass);
-        if (this.indicators[oldIndex].classList.contains(this.activeClass)) {
-            this.indicators[oldIndex].classList.remove(this.activeClass);
-        }
+        if (this.indicators) {
+            this.indicators[newIndex].classList.add(this.activeClass);
         
+            if (this.indicators[oldIndex].classList.contains(this.activeClass)) {
+                this.indicators[oldIndex].classList.remove(this.activeClass);
+            }
+        }
 
         setStyles(this.slides[newIndex], {
             display: 'block',
