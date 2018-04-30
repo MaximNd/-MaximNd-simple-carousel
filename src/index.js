@@ -153,12 +153,15 @@ export default class Slider {
             position: 'absolute',
             top: '0'
         });
-        setTimeout(() => {
-            setStyles(this.slides[newIndex], {
-                transform: 'translateX(0%)',
-                webkitTransform: 'translateX(0%)'
+        
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                setStyles(this.slides[newIndex], {
+                    transform: 'translateX(0%)',
+                    webkitTransform: 'translateX(0%)'
+                });
             });
-        }, 16);
+        });
         if (type === 'next') {
             setStyles(this.slides[newIndex], {
                 transform: 'translateX(100%)',
@@ -178,6 +181,7 @@ export default class Slider {
                 webkitTransform: 'translateX(100%)'
             });
         }
+        
         setTimeout(() => {
             setStyles(this.slides[oldIndex], {
                 display: 'none',
